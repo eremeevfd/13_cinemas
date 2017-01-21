@@ -7,9 +7,11 @@ from time import sleep
 from requests.exceptions import Timeout, ConnectionError
 import sys
 
+MIN_NUMBER_OF_CINEMA_SHOWS = 30
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
+
 
 def fetch_afisha_page():
     return requests.get('http://www.afisha.ru/msk/schedule_cinema/').content
@@ -55,16 +57,18 @@ def fetch_movie_rating_and_votes_number(kinopoisk_session, film_id):
     parsed_rating_page = parse_page(rating_page)
     kp_rating = find_rating(parsed_rating_page)
     number_of_votes = find_votes_number(parsed_rating_page)
-    return [kp_rating, number_of_votes]
+    return {'rating': kp_rating, 'votes_number': number_of_votes}
 
 
 def fetch_movie_info(movie_title):
     kinopoisk_session = requests.Session()
     sleep(10)
     payload = {'first': 'yes', 'kp_query': movie_title}
-    headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.87 Safari/537.36'}
     try:
-        search_response = kinopoisk_session.get('https://www.kinopoisk.ru/index.php', params=payload, headers=headers, timeout=10)
+        search_response = kinopoisk_session.get('https://www.kinopoisk.ru/index.php', params=payload, headers=headers,
+                                                timeout=10)
     except (Timeout, ConnectionError):
         sys.exit('No connection to kinopoisk.ru try later.')
     film_id = find_film_id_in_search_response(search_response)
@@ -72,15 +76,11 @@ def fetch_movie_info(movie_title):
     return rating_and_votes_number
 
 
-def update_films_cinemas_list_with_rating_and_votes(films_cinemas_list, movie_title, rating_and_votes):
-    films_cinemas_list[movie_title]['rating'] = rating_and_votes[0]
-    films_cinemas_list[movie_title]['votes_number'] = rating_and_votes[1]
-
-
 def get_films_rating_and_votes_number(films):
     for film_title in list(films.keys()):
         rating_and_votes_number = fetch_movie_info(film_title)
-        update_films_cinemas_list_with_rating_and_votes(films_cinemas_list, film_title, rating_and_votes_number)
+        films_cinemas_list[film_title]['rating'] = rating_and_votes_number['rating']
+        films_cinemas_list[film_title]['votes_number'] = rating_and_votes_number['votes_number']
 
 
 def sort_films_by_rating(films_list):
@@ -88,17 +88,23 @@ def sort_films_by_rating(films_list):
 
 
 def film_is_not_arthouse(film):
-    min_number_of_cinema_shows = 30
-    return film[1]['cinema_shows'] > min_number_of_cinema_shows
+    return film[1]['cinema_shows'] > MIN_NUMBER_OF_CINEMA_SHOWS
 
 
-def output_movies_to_console(films, count):
-    for film in films[:count]:
+def exclude_arthouse_films(films_list):
+    films_list_without_arthouse = []
+    for film in films_list:
         if film_is_not_arthouse(film):
-            print('Title: {0} | Rating: | {1} Votes number: | {2} Cinema shows: {3}'.format(film[0],
-                                                                                      film[1]['rating'],
-                                                                                      film[1]['votes_number'],
-                                                                                      film[1]['cinema_shows']))
+            films_list_without_arthouse.append(film)
+    return films_list_without_arthouse
+
+
+def output_movies_to_console(films):
+    for film in films:
+        print('Title: {0} | Rating: {1} | Votes number: {2} | Cinema shows: {3}'.format(film[0],
+                                                                                        film[1]['rating'],
+                                                                                        film[1]['votes_number'],
+                                                                                        film[1]['cinema_shows']))
 
 
 if __name__ == '__main__':
@@ -106,4 +112,5 @@ if __name__ == '__main__':
     films_cinemas_list = parse_afisha_list(afisha_page)
     get_films_rating_and_votes_number(films_cinemas_list)
     sorted_films_list = sort_films_by_rating(films_cinemas_list)
-    output_movies_to_console(sorted_films_list, 10)
+    sorted_films_without_arthouse = exclude_arthouse_films(sorted_films_list)
+    output_movies_to_console(sorted_films_without_arthouse[:10])
