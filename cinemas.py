@@ -113,4 +113,5 @@ if __name__ == '__main__':
     get_films_rating_and_votes_number(films_cinemas_list)
     sorted_films_list = sort_films_by_rating(films_cinemas_list)
     sorted_films_without_arthouse = exclude_arthouse_films(sorted_films_list)
-    output_movies_to_console(sorted_films_without_arthouse[:10])
+    films_count = 10
+    output_movies_to_console(sorted_films_without_arthouse[:films_count])
