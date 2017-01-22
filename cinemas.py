@@ -80,8 +80,9 @@ def fetch_movie_info(movie_title):
 def get_films_rating_and_votes_number(films):
     for film_title in list(films.keys()):
         rating_and_votes_number = fetch_movie_info(film_title)
-        films_cinemas_list[film_title]['rating'] = rating_and_votes_number['rating']
-        films_cinemas_list[film_title]['votes_number'] = rating_and_votes_number['votes_number']
+        films[film_title]['rating'] = rating_and_votes_number['rating']
+        films[film_title]['votes_number'] = rating_and_votes_number['votes_number']
+    return films
 
 
 def sort_films_by_rating(films_list):
@@ -111,7 +112,7 @@ def output_movies_to_console(films):
 if __name__ == '__main__':
     afisha_page = fetch_afisha_page()
     films_cinemas_list = parse_afisha_list(afisha_page)
-    get_films_rating_and_votes_number(films_cinemas_list)
+    films_cinemas_list = get_films_rating_and_votes_number(films_cinemas_list)
     sorted_films_list = sort_films_by_rating(films_cinemas_list)
     sorted_films_without_arthouse = exclude_arthouse_films(sorted_films_list)
     output_movies_to_console(sorted_films_without_arthouse)
