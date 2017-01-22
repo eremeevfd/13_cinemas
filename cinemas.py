@@ -8,6 +8,7 @@ from requests.exceptions import Timeout, ConnectionError
 import sys
 
 MIN_NUMBER_OF_CINEMA_SHOWS = 30
+FILMS_COUNT = 10
 
 logging.basicConfig(level='INFO')
 logger = logging.getLogger(__name__)
@@ -100,7 +101,7 @@ def exclude_arthouse_films(films_list):
 
 
 def output_movies_to_console(films):
-    for film in films:
+    for film in films[:FILMS_COUNT]:
         print('Title: {0} | Rating: {1} | Votes number: {2} | Cinema shows: {3}'.format(film[0],
                                                                                         film[1]['rating'],
                                                                                         film[1]['votes_number'],
@@ -113,5 +114,4 @@ if __name__ == '__main__':
     get_films_rating_and_votes_number(films_cinemas_list)
     sorted_films_list = sort_films_by_rating(films_cinemas_list)
     sorted_films_without_arthouse = exclude_arthouse_films(sorted_films_list)
-    films_count = 10
-    output_movies_to_console(sorted_films_without_arthouse[:films_count])
+    output_movies_to_console(sorted_films_without_arthouse)
